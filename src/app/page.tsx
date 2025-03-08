@@ -2,12 +2,12 @@
 
 import { useQuery } from "@apollo/client";
 import { LIST_MOVIES } from "@/graphql/queries";
-import type { ListMoviesData } from "@/graphql/queries";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import SignOutButton from "@/app/components/SignOut";
 import { CiCirclePlus } from "react-icons/ci";
 import { useResponsiveLimit } from "@/app/hooks/useResponsiveLimit";
 import { useState, useEffect, useRef } from "react";
+import { ListMoviesData } from "@/graphql/types";
 
 export default function Dashboard() {
   const { user, route } = useAuthenticator();
@@ -87,15 +87,15 @@ export default function Dashboard() {
     <div className="relative w-full h-full text-white bg-[#093545]">
       {isEmpty ? (
         /* Empty State */
-        <div className="h-full flex flex-col items-center justify-center">
+        <div className="min-h-screen  flex flex-col items-center justify-center">
           <h2 className="text-xl font-semibold mb-4">
             Welcome, {user?.signInDetails?.loginId || "User"}!
           </h2>
           <h1 className="text-4xl font-bold mb-6 text-center">
             Your movie list is empty
           </h1>
-          <button className="px-6 py-2 bg-[#2AD17E] text-white rounded hover:bg-[#22B06C] transition-colors">
-            Add a new movie
+          <button className="px-8 py-3 bg-[#2AD17E] text-white rounded-lg hover:bg-[#22B06C] transition-colors">
+            <span className="font-bold">Add a new movie</span>
           </button>
         </div>
       ) : (
@@ -122,7 +122,7 @@ export default function Dashboard() {
                 className="bg-[#092C39] rounded-lg shadow cursor-pointer w-40 md:w-50 lg:w-60 
                    h-64 md:h-70 lg:h-80 flex flex-col overflow-hidden hover:shadow-lg transition-shadow"
               >
-                <div className="w-full overflow-hidden p-2">
+                <div className="w-full h-full overflow-hidden p-2">
                   {movie.poster ? (
                     <img
                       src={movie.poster}
@@ -158,11 +158,11 @@ export default function Dashboard() {
               disabled={!hasPreviousPage || isPageChanging}
               className={`${
                 hasPreviousPage && !isPageChanging
-                  ? "text-white hover:bg-gray-600 transition-colors"
+                  ? "text-white  hover:bg-gray-600 transition-colors"
                   : "text-gray-500 cursor-not-allowed"
               }`}
             >
-              Previous
+              <span className="font-bold">Prev</span>
             </button>
 
             <span className="inline-flex items-center justify-center w-8 h-8 rounded bg-[#2AD17E] text-white font-medium">
@@ -183,7 +183,7 @@ export default function Dashboard() {
                   : "text-gray-500 cursor-not-allowed"
               }`}
             >
-              Next
+              <span className="font-bold">Next</span>
             </button>
           </div>
         </div>
