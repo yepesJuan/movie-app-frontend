@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,7 +36,6 @@ export default function CreateMoviePage() {
 
   const [preview, setPreview] = useState<string | null>(null);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onSubmit = async (data: any) => {
     try {
       const posterUrl = await uploadImageToS3(data.image);
@@ -63,63 +64,87 @@ export default function CreateMoviePage() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-[#093545]">
+    <div className="w-full px-4 lg:mx-24 py-12">
+      <div className="max-w-5xl  mb-8 lg:mb-16">
+        <h1 className="text-white text-3xl font-bold">Create a new movie</h1>
+      </div>
+
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-col items-center gap-6 bg-[#093545] p-8 rounded-lg"
+        className="max-w-5xl grid grid-cols-1 md:grid-cols-2 lg:gap-24 place-items-start"
       >
-        <h1 className="text-white text-2xl font-bold">Create a new movie</h1>
-
-        <label className="w-64 h-64 border-2 border-dashed border-white flex items-center justify-center">
-          {preview ? (
-            <img
-              src={preview}
-              alt="Preview"
-              className="w-full h-full object-cover"
+        <div className="flex flex-col pb-12  w-full">
+          <label
+            className="
+              w-full h-64 md:h-96 border-2 border-dashed border-white 
+              rounded-md flex items-center justify-center
+            "
+          >
+            {preview ? (
+              <img
+                src={preview}
+                alt="Preview"
+                className="w-full h-full object-cover rounded-md"
+              />
+            ) : (
+              <span className="text-white">Upload an image here</span>
+            )}
+            <input
+              type="file"
+              className="hidden"
+              onChange={handleImageChange}
             />
-          ) : (
-            <span className="text-white">Drop an image here</span>
+          </label>
+          {errors.image && (
+            <p className="text-[#eb5758] mt-2">{errors.image.message}</p>
           )}
-          <input type="file" className="hidden" onChange={handleImageChange} />
-        </label>
-        {errors.image && (
-          <p className="text-[#eb5758]">{errors.image.message}</p>
-        )}
-
-        <input
-          {...register("title")}
-          placeholder="Title"
-          className="bg-[#224957] text-white px-4 py-2 rounded-md w-80"
-        />
-        {errors.title && (
-          <p className="text-[#eb5758]">{errors.title.message}</p>
-        )}
-
-        <input
-          {...register("publishingYear")}
-          placeholder="Publishing year"
-          className="bg-[#224957] text-white px-4 py-2 rounded-md w-80"
-        />
-        {errors.publishingYear && (
-          <p className="text-[#eb5758]">{errors.publishingYear.message}</p>
-        )}
-
-        <div className="flex gap-4">
-          <button
-            type="button"
-            className="border border-white text-white px-4 py-2 rounded-md"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="bg-[#2AD17E] text-white px-6 py-2 rounded-md"
-          >
-            {loading ? "Submitting..." : "Submit"}
-          </button>
         </div>
 
-        {error && <p className="text-[#eb5758]">{error.message}</p>}
+        <div className="flex flex-col w-full">
+          <input
+            {...register("title")}
+            placeholder="Title"
+            className="bg-[#224957] text-white px-4 py-2 rounded-lg w-3/4 mb-4"
+          />
+          {errors.title && (
+            <p className="text-[#eb5758] mb-2">{errors.title.message}</p>
+          )}
+
+          <div className="md:w-2/5 lg:mb-8">
+            <input
+              {...register("publishingYear")}
+              placeholder="Publishing year"
+              className="bg-[#224957] text-white px-4 py-2 rounded-lg w-full mb-4"
+            />
+            {errors.publishingYear && (
+              <p className="text-[#eb5758] mb-2">
+                {errors.publishingYear.message}
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-4 w-full">
+            <Link href="/">
+              <button
+                type="button"
+                className="border border-white text-white px-12 py-3 rounded-md"
+              >
+                <span className="font-bold">Cancel</span>
+              </button>
+            </Link>
+            <button
+              type="submit"
+              className="bg-[#2AD17E] text-white px-12 py-3 rounded-md"
+            >
+              <span className="font-bold">
+                {" "}
+                {loading ? "Submitting..." : "Submit"}
+              </span>
+            </button>
+          </div>
+
+          {error && <p className="text-[#eb5758] mt-4">{error.message}</p>}
+        </div>
       </form>
     </div>
   );

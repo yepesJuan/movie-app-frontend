@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       // ACL: "public-read",
     });
 
-    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 3600 }); //604800 = 1 week
 
     const fileUrl = `https://${bucketName}.s3.amazonaws.com/movies/${filename}`;
 

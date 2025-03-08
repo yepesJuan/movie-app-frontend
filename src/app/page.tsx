@@ -1,75 +1,129 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useQuery } from "@apollo/client";
 import { LIST_MOVIES } from "@/graphql/queries";
+import { ListMoviesData, Movie } from "@/graphql/types";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import SignOutButton from "@/app/components/SignOut";
 import { CiCirclePlus } from "react-icons/ci";
-import { useResponsiveLimit } from "@/app/hooks/useResponsiveLimit";
-import { useState, useEffect, useRef } from "react";
-import { ListMoviesData } from "@/graphql/types";
+import { useMediaQuery } from "react-responsive";
 
 export default function Dashboard() {
   const { user, route } = useAuthenticator();
-  const limit = useResponsiveLimit();
+  const isLargeScreen = useMediaQuery({ minWidth: 1024 });
+  const itemsPerPage = isLargeScreen ? 8 : 6;
+
+  // Cache pages data
+  const [pagesData, setPagesData] = useState<{
+    [page: number]: { movies: Movie[]; nextToken: string | null };
+  }>({});
+
   const [currentPage, setCurrentPage] = useState(1);
-  const [tokenMap, setTokenMap] = useState<{ [key: number]: string | null }>({
-    1: null, // First page starts with null token
-  });
-  const [isPageChanging, setIsPageChanging] = useState(false);
-  const isFirstRender = useRef(true);
+  const [isLoadingPage, setIsLoadingPage] = useState(false);
 
-  // Get the nextToken for the current page from our map
-  const currentToken = tokenMap[currentPage];
+  // Initial query for page 1
+  const { data, loading, error, fetchMore } = useQuery<ListMoviesData>(
+    LIST_MOVIES,
+    {
+      skip: route !== "authenticated",
+      fetchPolicy: "cache-and-network",
+      variables: {
+        limit: itemsPerPage,
+        nextToken: null,
+      },
+    }
+  );
 
-  const { loading, error, data } = useQuery<ListMoviesData>(LIST_MOVIES, {
-    skip: route !== "authenticated",
-    fetchPolicy: "cache-and-network",
-    variables: { limit, nextToken: currentToken },
-  });
-
-  // Only update tokenMap when data changes, but not on first render
+  // Cache page 1 data
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    if (!data) return;
+    setPagesData((prevPages) => {
+      if (!prevPages[1]) {
+        return {
+          ...prevPages,
+          1: {
+            movies: data.listMovies.items || [],
+            nextToken: data.listMovies.nextToken || null,
+          },
+        };
+      }
+      return prevPages;
+    });
+  }, [data]);
+
+  // for subsequent fetches  (main fetch + peek query)  issues from getting a nextToken....
+  const fetchPage = async (pageNumber: number, token: string | null) => {
+    setIsLoadingPage(true);
+    try {
+      // Main fetch: fetch exactly itemsPerPage movies
+      const mainResult = await fetchMore({
+        variables: { limit: itemsPerPage, nextToken: token },
+      });
+      const mainItems: Movie[] = mainResult.data?.listMovies.items || [];
+      let mainNextToken: string | null =
+        mainResult.data?.listMovies.nextToken || null;
+
+      // If full page and a nextToken, peek to see if data exists
+      if (mainItems.length === itemsPerPage && mainNextToken) {
+        const peekResult = await fetchMore({
+          variables: { limit: itemsPerPage, nextToken: mainNextToken },
+        });
+        const peekItems = peekResult.data?.listMovies.items || [];
+        if (peekItems.length === 0) {
+          mainNextToken = null;
+        }
+      }
+
+      // Cache the fetched page
+      setPagesData((prev) => ({
+        ...prev,
+        [pageNumber]: { movies: mainItems, nextToken: mainNextToken },
+      }));
+      setCurrentPage(pageNumber);
+    } catch (err) {
+      console.error("Error fetching page:", err);
+    } finally {
+      setIsLoadingPage(false);
+    }
+  };
+
+  // Helperr to load an arbitrary page (from cache or by fetching)
+  const loadPage = async (pageNumber: number) => {
+    if (pagesData[pageNumber]) {
+      setCurrentPage(pageNumber);
       return;
     }
 
-    // Only update if we have data and a nextToken
-    const nextToken = data?.listMovies.nextToken;
-    if (nextToken !== undefined) {
-      setTokenMap((prevMap) => ({
-        ...prevMap,
-        // TypeScript now knows nextToken is string | null, not undefined
-        [currentPage + 1]: nextToken,
-      }));
+    if (pageNumber > currentPage) {
+      const token = pagesData[currentPage]?.nextToken;
+      if (!token) return;
+      await fetchPage(pageNumber, token);
+    } else {
+      // Going backwards: use token from previous page if ther
+      const token = pagesData[pageNumber - 1]?.nextToken || null;
+      await fetchPage(pageNumber, token);
     }
-
-    setIsPageChanging(false);
-  }, [data?.listMovies.nextToken, currentPage]);
-
-  const goToNextPage = () => {
-    if (!data?.listMovies.nextToken) return;
-
-    setIsPageChanging(true);
-    setCurrentPage((prev) => prev + 1);
   };
 
-  const goToPrevPage = () => {
-    if (currentPage <= 1) return;
+  const goToNextPage = () => loadPage(currentPage + 1);
+  const goToPrevPage = () => loadPage(currentPage - 1);
 
-    setIsPageChanging(true);
-    setCurrentPage((prev) => prev - 1);
-  };
+  // Current page data
+  const pageData = pagesData[currentPage] || { movies: [], nextToken: null };
+  const currentMovies = pageData.movies;
+  const hasNextPage = !!pageData.nextToken;
+  const hasPrevPage = currentPage > 1;
+  const isEmpty = !loading && currentMovies.length === 0 && currentPage === 1;
 
-  if (loading && !isPageChanging) {
+  if ((loading && !data) || (isLoadingPage && currentMovies.length === 0)) {
     return (
       <div className="flex-1 flex items-center justify-center text-white h-screen bg-[#093545]">
         Loading movies...
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="flex-1 flex items-center justify-center text-red-500 h-screen bg-[#093545]">
@@ -78,16 +132,10 @@ export default function Dashboard() {
     );
   }
 
-  const movies = data?.listMovies.items || [];
-  const hasNextPage = !!data?.listMovies.nextToken;
-  const hasPreviousPage = currentPage > 1;
-  const isEmpty = movies.length === 0;
-
   return (
     <div className="relative w-full h-full text-white bg-[#093545]">
       {isEmpty ? (
-        /* Empty State */
-        <div className="min-h-screen  flex flex-col items-center justify-center">
+        <div className="min-h-screen flex flex-col items-center justify-center">
           <h2 className="text-xl font-semibold mb-4">
             Welcome, {user?.signInDetails?.loginId || "User"}!
           </h2>
@@ -99,24 +147,20 @@ export default function Dashboard() {
           </button>
         </div>
       ) : (
-        /* Movie List */
-        <div className="max-w-7xl mx-auto px-4 pt-16">
-          {/* Top bar */}
+        <div className="max-w-7xl mx-auto px-4 pt-12 ">
           <div className="flex items-center justify-between mb-12 w-full max-w-7xl mx-auto px-4">
-            {/* Left side: My movies + Add Movie button */}
             <div className="flex items-center space-x-2">
               <h1 className="text-3xl font-bold">My movies</h1>
-              <button className="flex items-center space-x-1 text-white rounded-full mt-1 hover:text-[#2AD17E] transition-colors">
-                <CiCirclePlus className="text-2xl" />
-              </button>
+              <Link href="/createMovie">
+                <button className="flex items-center space-x-1 text-white rounded-full mt-1 hover:text-[#2AD17E] transition-colors">
+                  <CiCirclePlus className="text-2xl" />
+                </button>
+              </Link>
             </div>
-            {/* Right side: Sign Out button */}
             <SignOutButton />
           </div>
-
-          {/* Movies grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-6 place-items-center">
-            {movies.map((movie) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-0 gap-y-4 place-items-center">
+            {currentMovies.map((movie) => (
               <div
                 key={movie.id}
                 className="bg-[#092C39] rounded-lg shadow cursor-pointer w-40 md:w-50 lg:w-60 
@@ -150,17 +194,15 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-
-          {/* Pagination Controls */}
-          <div className="flex justify-center items-center space-x-4 mt-12">
+          <div className="flex justify-center items-center space-x-4 mt-12 mb-8">
             <button
               onClick={goToPrevPage}
-              disabled={!hasPreviousPage || isPageChanging}
+              disabled={!hasPrevPage || isLoadingPage}
               className={`${
-                hasPreviousPage && !isPageChanging
-                  ? "text-white  hover:bg-gray-600 transition-colors"
+                hasPrevPage && !isLoadingPage
+                  ? "text-white hover:bg-gray-600 transition-colors"
                   : "text-gray-500 cursor-not-allowed"
-              }`}
+              } px-4 py-2 rounded`}
             >
               <span className="font-bold">Prev</span>
             </button>
@@ -176,12 +218,12 @@ export default function Dashboard() {
 
             <button
               onClick={goToNextPage}
-              disabled={!hasNextPage || isPageChanging}
+              disabled={!hasNextPage || isLoadingPage}
               className={`${
-                hasNextPage && !isPageChanging
-                  ? " text-white hover:bg-gray-600 transition-colors"
+                hasNextPage && !isLoadingPage
+                  ? "text-white hover:bg-gray-600 transition-colors"
                   : "text-gray-500 cursor-not-allowed"
-              }`}
+              } px-4 py-2 rounded`}
             >
               <span className="font-bold">Next</span>
             </button>
