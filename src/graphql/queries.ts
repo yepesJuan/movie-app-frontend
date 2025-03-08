@@ -1,5 +1,4 @@
 import { gql } from "@apollo/client";
-import { Movie } from "./types";
 
 export const LIST_MOVIES = gql`
   query ListMovies($limit: Int, $nextToken: String) {
@@ -15,9 +14,21 @@ export const LIST_MOVIES = gql`
   }
 `;
 
-export interface ListMoviesData {
-  listMovies: {
-    items: Movie[];
-    nextToken?: string | null;
-  };
-}
+export const CREATE_MOVIE = gql`
+  mutation CreateMovie(
+    $title: String!
+    $publishingYear: Int!
+    $poster: String
+  ) {
+    createMovie(
+      title: $title
+      publishingYear: $publishingYear
+      poster: $poster
+    ) {
+      id
+      title
+      publishingYear
+      poster
+    }
+  }
+`;
