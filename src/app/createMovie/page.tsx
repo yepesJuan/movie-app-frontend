@@ -10,6 +10,8 @@ import { useMutation } from "@apollo/client";
 import { CREATE_MOVIE } from "@/graphql/queries";
 import { uploadImageToS3 } from "@/lib/uploadImage";
 import { CreateMovieData, CreateMovieArgs } from "@/graphql/types";
+import { useMediaQuery } from "react-responsive";
+import { MdOutlineFileDownload } from "react-icons/md";
 
 const movieSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -39,7 +41,6 @@ export default function CreateMoviePage() {
   const onSubmit = async (data: any) => {
     try {
       const posterUrl = await uploadImageToS3(data.image);
-
       await createMovie({
         variables: {
           title: data.title,
@@ -47,7 +48,6 @@ export default function CreateMoviePage() {
           poster: posterUrl,
         },
       });
-
       alert("Movie added successfully!");
     } catch (err) {
       console.error(err);
@@ -63,89 +63,188 @@ export default function CreateMoviePage() {
     }
   };
 
+  const isLargeScreen = useMediaQuery({ minWidth: 1024 });
+
   return (
-    <div className="w-full px-4 lg:mx-24 py-12">
-      <div className="max-w-5xl  mb-8 lg:mb-16">
+    <div className="w-full px-4 md:mx-16 lg:mx-24 py-16">
+      <div className="max-w-5xl mb-12 lg:mb-16">
         <h1 className="text-white text-3xl font-bold">Create a new movie</h1>
       </div>
 
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="max-w-5xl grid grid-cols-1 md:grid-cols-2 lg:gap-24 place-items-start"
-      >
-        <div className="flex flex-col pb-12  w-full">
-          <label
-            className="
-              w-full h-64 md:h-96 border-2 border-dashed border-white 
-              rounded-md flex items-center justify-center
-            "
-          >
-            {preview ? (
-              <img
-                src={preview}
-                alt="Preview"
-                className="w-full h-full object-cover rounded-md"
+      {isLargeScreen ? (
+        // Large screens layout: two-column
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="max-w-5xl flex flex-row gap-24"
+        >
+          <div className="w-full">
+            <label className="w-full h-120 border-2 border-dashed border-white rounded-md flex items-center justify-center bg-[#224957]">
+              {preview ? (
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-full h-full object-cover rounded-md"
+                />
+              ) : (
+                <>
+                  <div className="flex flex-col items-center">
+                    <MdOutlineFileDownload className="text-white text-2xl" />
+                    <span className="text-white mt-2">
+                      Upload an image here
+                    </span>
+                  </div>
+                </>
+              )}
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleImageChange}
               />
-            ) : (
-              <span className="text-white">Upload an image here</span>
+            </label>
+            {errors.image && (
+              <p className="text-[#eb5758] mt-2">{errors.image.message}</p>
             )}
-            <input
-              type="file"
-              className="hidden"
-              onChange={handleImageChange}
-            />
-          </label>
-          {errors.image && (
-            <p className="text-[#eb5758] mt-2">{errors.image.message}</p>
-          )}
-        </div>
+          </div>
 
-        <div className="flex flex-col w-full">
-          <input
-            {...register("title")}
-            placeholder="Title"
-            className="bg-[#224957] text-white px-4 py-2 rounded-lg w-3/4 mb-4"
-          />
-          {errors.title && (
-            <p className="text-[#eb5758] mb-2">{errors.title.message}</p>
-          )}
+          <div className="w-full flex flex-col">
+            <div>
+              <div className="w-full lg:mb-6 mb-4">
+                <input
+                  {...register("title")}
+                  placeholder="Title"
+                  className="bg-[#224957] text-white px-4 py-2 rounded-lg w-full lg:w-3/4"
+                />
+                {errors.title && (
+                  <p className="text-[#eb5758] mb-2">{errors.title.message}</p>
+                )}
+              </div>
 
-          <div className="md:w-2/5 lg:mb-8">
-            <input
-              {...register("publishingYear")}
-              placeholder="Publishing year"
-              className="bg-[#224957] text-white px-4 py-2 rounded-lg w-full mb-4"
-            />
-            {errors.publishingYear && (
-              <p className="text-[#eb5758] mb-2">
-                {errors.publishingYear.message}
-              </p>
+              <div className="lg:mb-12 mb-4">
+                <input
+                  {...register("publishingYear")}
+                  placeholder="Publishing year"
+                  className="bg-[#224957] text-white px-4 py-2 rounded-lg w-full md:w-3/5 lg:w-1/2"
+                />
+                {errors.publishingYear && (
+                  <p className="text-[#eb5758] mb-2">
+                    {errors.publishingYear.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-4 w-full lg:w-3/4">
+              <div className="flex-1">
+                <Link href="/">
+                  <button
+                    type="button"
+                    className="w-full border border-white text-white px-4 py-3 rounded-md appearance-none focus:outline-none box-border"
+                  >
+                    <span className="font-bold">Cancel</span>
+                  </button>
+                </Link>
+              </div>
+              <div className="flex-1">
+                <button
+                  type="submit"
+                  className="w-full bg-[#2AD17E] text-white px-4 py-3 rounded-md appearance-none focus:outline-none box-border"
+                >
+                  <span className="font-bold">
+                    {loading ? "Submitting..." : "Submit"}
+                  </span>
+                </button>
+              </div>
+            </div>
+            {error && <p className="text-[#eb5758] mt-4">{error.message}</p>}
+          </div>
+        </form>
+      ) : (
+        // Small screens- vertical stack (inputs, then upload, then buttons)
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="max-w-5xl mx-auto grid grid-cols-1 gap-4"
+        >
+          <div>
+            <div className="w-full lg:mb-8 mb-4">
+              <input
+                {...register("title")}
+                placeholder="Title"
+                className="bg-[#224957] text-white px-4 py-2 rounded-lg w-full"
+              />
+              {errors.title && (
+                <p className="text-[#eb5758] mb-2">{errors.title.message}</p>
+              )}
+            </div>
+
+            <div className="lg:mb-8 mb-4">
+              <input
+                {...register("publishingYear")}
+                placeholder="Publishing year"
+                className="bg-[#224957] text-white px-4 py-2 rounded-lg w-full"
+              />
+              {errors.publishingYear && (
+                <p className="text-[#eb5758] mb-2">
+                  {errors.publishingYear.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col pb-6">
+            <label className="w-full h-64 md:h-96 border-2 border-dashed border-white rounded-md flex items-center justify-center bg-[#224956]">
+              {preview ? (
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-full h-full object-cover rounded-md"
+                />
+              ) : (
+                <>
+                  <div className="flex flex-col items-center">
+                    <MdOutlineFileDownload className="text-white text-2xl" />
+                    <span className="text-white mt-2">
+                      Upload an image here
+                    </span>
+                  </div>
+                </>
+              )}
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleImageChange}
+              />
+            </label>
+            {errors.image && (
+              <p className="text-[#eb5758] mt-2">{errors.image.message}</p>
             )}
           </div>
 
           <div className="flex gap-4 w-full">
-            <Link href="/">
+            <div className="flex-1">
+              <Link href="/">
+                <button
+                  type="button"
+                  className="w-full border border-white text-white px-4 py-3 rounded-md appearance-none focus:outline-none box-border"
+                >
+                  <span className="font-bold">Cancel</span>
+                </button>
+              </Link>
+            </div>
+            <div className="flex-1">
               <button
-                type="button"
-                className="border border-white text-white px-12 py-3 rounded-md"
+                type="submit"
+                className="w-full bg-[#2AD17E] text-white px-4 py-3 rounded-md appearance-none focus:outline-none box-border"
               >
-                <span className="font-bold">Cancel</span>
+                <span className="font-bold">
+                  {loading ? "Submitting..." : "Submit"}
+                </span>
               </button>
-            </Link>
-            <button
-              type="submit"
-              className="bg-[#2AD17E] text-white px-12 py-3 rounded-md"
-            >
-              <span className="font-bold">
-                {" "}
-                {loading ? "Submitting..." : "Submit"}
-              </span>
-            </button>
+            </div>
           </div>
 
           {error && <p className="text-[#eb5758] mt-4">{error.message}</p>}
-        </div>
-      </form>
+        </form>
+      )}
     </div>
   );
 }
