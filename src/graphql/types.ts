@@ -1,8 +1,8 @@
 export interface Movie {
   id: string;
   title: string;
-  publishingYear?: number | null;
-  poster?: string | null;
+  publishingYear: number;
+  poster: string;
 }
 
 export interface ListMoviesData {
@@ -12,11 +12,29 @@ export interface ListMoviesData {
   };
 }
 
-export interface CreateMovieData {
-  createMovie: Movie;
-}
-export interface CreateMovieArgs {
+export interface UpdateMovieVariables {
+  id: string;
   title: string;
   publishingYear: number;
-  poster?: string | null;
+  poster: string;
+}
+
+export interface UpdateMovieResponse {
+  updateMovie: Movie;
+}
+
+export interface CreateMovieVariables {
+  title: string;
+  publishingYear: number;
+  poster: string;
+}
+
+export interface CreateMovieResponse {
+  createMovie: Movie;
+}
+
+export interface FormTextConfig {
+  title: string;
+  button: string;
+  alert: string;
 }

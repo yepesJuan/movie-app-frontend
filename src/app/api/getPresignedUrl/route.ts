@@ -8,8 +8,7 @@ const s3 = new S3Client({ region: "us-east-1" });
 export async function POST(req: Request) {
   try {
     const { filename, contentType } = await req.json();
-    const bucketName =
-      "awsmovieappbackendstack-movieimagebucket192c917f-85wbjm2yrjnf";
+    const bucketName = process.env.NEXT_PUBLIC_S3_BUCKET_NAME;
 
     const command = new PutObjectCommand({
       Bucket: bucketName,

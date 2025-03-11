@@ -115,7 +115,12 @@ export default function Dashboard() {
   const currentMovies = pageData.movies;
   const hasNextPage = !!pageData.nextToken;
   const hasPrevPage = currentPage > 1;
-  const isEmpty = !loading && currentMovies.length === 0 && currentPage === 1;
+  const isEmpty =
+    !loading &&
+    !isLoadingPage &&
+    data &&
+    currentMovies.length === 0 &&
+    currentPage === 1;
 
   if ((loading && !data) || (isLoadingPage && currentMovies.length === 0)) {
     return (
@@ -142,9 +147,12 @@ export default function Dashboard() {
           <h1 className="text-4xl font-bold mb-6 text-center">
             Your movie list is empty
           </h1>
-          <button className="px-8 py-3 bg-[#2AD17E] text-white rounded-lg hover:bg-[#22B06C] transition-colors">
+          <Link
+            href="/createMovie"
+            className="px-8 py-3 bg-[#2AD17E] text-white rounded-lg hover:bg-[#22B06C] transition-colors text-center font-bold"
+          >
             <span className="font-bold">Add a new movie</span>
-          </button>
+          </Link>
         </div>
       ) : (
         <div className="max-w-7xl mx-auto px-4 pt-12 ">
@@ -161,37 +169,42 @@ export default function Dashboard() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-0 gap-y-4 place-items-center">
             {currentMovies.map((movie) => (
-              <div
+              <Link
                 key={movie.id}
-                className="bg-[#092C39] rounded-lg shadow cursor-pointer w-40 md:w-50 lg:w-60 
-                   h-64 md:h-70 lg:h-80 flex flex-col overflow-hidden hover:shadow-lg transition-shadow"
+                href={`/editMovie/${movie.id}`} // Assuming this is your route
+                className="w-40 md:w-50 lg:w-60 h-64 md:h-70 lg:h-80"
               >
-                <div className="w-full h-full overflow-hidden p-2">
-                  {movie.poster ? (
-                    <img
-                      src={movie.poster}
-                      alt={movie.title}
-                      className="w-full h-full object-cover rounded-lg"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).onerror = null;
-                        e.currentTarget.src = "./test.png";
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-[#0F3D54] flex items-center justify-center rounded-lg">
-                      No Poster
-                    </div>
-                  )}
+                <div
+                  className="bg-[#092C39] rounded-lg shadow cursor-pointer w-40 md:w-50 lg:w-60 
+                   h-64 md:h-70 lg:h-80 flex flex-col overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  <div className="w-full h-full overflow-hidden p-2">
+                    {movie.poster ? (
+                      <img
+                        src={movie.poster}
+                        alt={movie.title}
+                        className="w-full h-full object-cover rounded-lg"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).onerror = null;
+                          e.currentTarget.src = "./test.png";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-[#0F3D54] flex items-center justify-center rounded-lg">
+                        No Poster
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4 flex-grow">
+                    <h3 className="font-bold text-base">{movie.title}</h3>
+                    {movie.publishingYear && (
+                      <p className="text-sm text-gray-300">
+                        {movie.publishingYear}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="p-4 flex-grow">
-                  <h3 className="font-bold text-base">{movie.title}</h3>
-                  {movie.publishingYear && (
-                    <p className="text-sm text-gray-300">
-                      {movie.publishingYear}
-                    </p>
-                  )}
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
           <div className="flex justify-center items-center space-x-4 mt-12 mb-8">

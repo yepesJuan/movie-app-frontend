@@ -9,6 +9,7 @@ import Footer from "./components/Footer";
 import { client } from "@/lib/apolloClient";
 import "@aws-amplify/ui-react/styles.css";
 import "./global.css";
+import Head from "next/head";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -24,6 +25,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <Head>
+        <link rel="icon" href="/public/favicon.ico" />
+      </Head>
       <body className={montserrat.className}>
         <style>{`
           ${authStyles}

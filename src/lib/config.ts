@@ -1,5 +1,5 @@
 const graphqlConfig = {
-  uri: "https://gxqo2ksrczf7lk7etfhoypr37i.appsync-api.us-east-1.amazonaws.com/graphql",
+  uri: process.env.NEXT_PUBLIC_APPSYNC_URL,
   region: "us-east-1",
   defaultAuthMode: "userPool",
 };

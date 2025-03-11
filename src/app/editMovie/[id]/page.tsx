@@ -1,50 +1,53 @@
 "use client";
 
 import { useMutation } from "@apollo/client";
-import { CREATE_MOVIE } from "@/graphql/queries";
 import { uploadImageToS3 } from "@/lib/uploadImage";
+import { useRouter, useParams } from "next/navigation";
 import MovieForm from "@/app/components/MovieForm";
-import { CreateMovieResponse, CreateMovieVariables } from "@/graphql/types";
-import { useRouter } from "next/navigation";
+import { UPDATE_MOVIE } from "@/graphql/queries";
+import { UpdateMovieResponse, UpdateMovieVariables } from "@/graphql/types";
 import { useState } from "react";
 
 const formTextObj = {
-  title: "Create a new movie",
-  button: "Submit",
-  alert: "Created successfully!",
+  title: "Edit",
+  button: "Update",
+  alert: "Updated successfully!",
 };
 
-export default function CreateMoviePage() {
-  const [createMovie, { loading }] = useMutation<
-    CreateMovieResponse,
-    CreateMovieVariables
-  >(CREATE_MOVIE);
-
+export default function EditMoviePage() {
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
+
+  const [updateMovie, { loading: updating }] = useMutation<
+    UpdateMovieResponse,
+    UpdateMovieVariables
+  >(UPDATE_MOVIE);
 
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusType, setStatusType] = useState<"success" | "error" | null>(
     null
   );
 
-  const handleCreate = async (formData: {
+  const handleUpdate = async (formData: {
     title: string;
     publishingYear: string;
     poster?: File;
   }) => {
-    if (loading) return;
+    if (updating) return;
     try {
       const posterUrl = await uploadImageToS3(formData.poster!);
 
-      const { data } = await createMovie({
+      const { data } = await updateMovie({
         variables: {
+          id,
           title: formData.title,
           publishingYear: parseInt(formData.publishingYear, 10),
           poster: posterUrl,
         },
         refetchQueries: ["ListMovies"],
       });
-      if (!data?.createMovie) {
+
+      if (!data?.updateMovie) {
         throw new Error("Failed to update movie.");
       }
 
@@ -69,8 +72,8 @@ export default function CreateMoviePage() {
   return (
     <MovieForm
       formText={formTextObj}
-      onSubmit={handleCreate}
-      loading={loading}
+      onSubmit={handleUpdate}
+      loading={updating}
       statusMessage={statusMessage}
       statusType={statusType}
     />
