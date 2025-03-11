@@ -2,10 +2,9 @@ import { ApolloClient, InMemoryCache, createHttpLink } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 import { Amplify } from "aws-amplify";
 import { fetchAuthSession } from "aws-amplify/auth";
-import awsExports from "@/aws-exports";
-import graphqlConfig from "./config";
+import { amplifyConfig, graphqlConfig } from "./config";
 
-Amplify.configure(awsExports);
+Amplify.configure(amplifyConfig);
 
 const httpLink = createHttpLink({
   uri: graphqlConfig.uri,
