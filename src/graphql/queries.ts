@@ -32,3 +32,35 @@ export const CREATE_MOVIE = gql`
     }
   }
 `;
+
+export const GET_MOVIE = gql`
+  query GetMovie($id: ID!) {
+    getMovie(id: $id) {
+      id
+      title
+      publishingYear
+      poster
+    }
+  }
+`;
+
+export const UPDATE_MOVIE = gql`
+  mutation UpdateMovie(
+    $id: ID!
+    $title: String!
+    $publishingYear: Int!
+    $poster: String
+  ) {
+    updateMovie(
+      id: $id
+      title: $title
+      publishingYear: $publishingYear
+      poster: $poster
+    ) {
+      id
+      title
+      publishingYear
+      poster
+    }
+  }
+`;
