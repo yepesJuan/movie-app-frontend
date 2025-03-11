@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "@apollo/client": "^3.13.1",
     "@aws-amplify/ui-react": "^6.9.2",
