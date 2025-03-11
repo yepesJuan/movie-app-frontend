@@ -4,19 +4,19 @@ import { Amplify } from "aws-amplify";
 import { Authenticator, ThemeProvider } from "@aws-amplify/ui-react";
 import { ApolloProvider } from "@apollo/client";
 import { authStyles, formFields } from "./authCustomization";
-import awsExports from "@/aws-exports";
 import Footer from "./components/Footer";
 import { client } from "@/lib/apolloClient";
 import "@aws-amplify/ui-react/styles.css";
 import "./global.css";
 import Head from "next/head";
+import { amplifyConfig } from "@/lib/config";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["400", "700"],
 });
 
-Amplify.configure(awsExports);
+Amplify.configure(amplifyConfig);
 
 export default function RootLayout({
   children,
