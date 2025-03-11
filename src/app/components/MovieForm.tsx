@@ -239,7 +239,7 @@ export default function MovieForm({
       )}
       {statusMessage && (
         <div
-          className={`fixed left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-md text-white font-bold z-50 ${
+          className={`fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 px-6 py-3 rounded-md text-white font-bold z-50 ${
             statusType === "success" ? "bg-[#2AD17E]" : "bg-[#eb5758]"
           }`}
         >
